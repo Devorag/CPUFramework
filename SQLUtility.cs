@@ -8,16 +8,6 @@ namespace CPUFramework
     {
         public static string ConnectionString = "";
 
-        public static void DebugPrintDataTable(DataTable dtpresident)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static void ExecuteSQL(string sql)
-        {
-            throw new NotImplementedException();
-        }
-
         public static int GetFirstColumnFirstRowValue(string sql)
         {
             int n = 0;
