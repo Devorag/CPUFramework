@@ -22,20 +22,6 @@ namespace CPUFramework
             return cmd;
         }
 
-        public static int GetFirstColumnFirstRowValue(string sql)
-        {
-            int n = 0;
-            DataTable dt = GetDataTable(sql);
-            if (dt.Rows.Count > 0 && dt.Columns.Count > 0)
-            {   
-                if (dt.Rows[0][0] != DBNull.Value)
-                {
-                    int.TryParse(dt.Rows[0][0].ToString(), out n);
-                }
-            }
-            return n;
-        }
-
         public static DataTable GetDataTable(SqlCommand cmd)
         {
             DataTable dt = new();
