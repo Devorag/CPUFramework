@@ -60,25 +60,27 @@ namespace CPUFramework
             string origmsg = msg;
             string prefix = "ck_";
             string msgEnd = "";
-            if (msg.Contains(prefix) == false)
+
+            if (!msg.Contains(prefix))
             {
                 if (msg.Contains("u_"))
                 {
                     prefix = "u_";
-                    msgEnd = "must be unique";
+                    msgEnd = " must be unique.";
                 }
-                else if (msg.Contains("f_"))
+                else if (msg.Contains("F_"))
                 {
-                    prefix = "f_";
+                    prefix = "F_";
                     msgEnd = "";
                 }
             }
             if (msg.Contains(prefix))
             {
-                msg = msg.Replace("\"", "\'");
+                msg = msg.Replace("\"", "'");
                 int pos = msg.IndexOf(prefix) + prefix.Length;
                 msg = msg.Substring(pos);
-                pos = msg.IndexOf("\"");
+
+                pos = msg.IndexOf("'");
                 if (pos == -1)
                 {
                     msg = origmsg;
