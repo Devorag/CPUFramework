@@ -68,10 +68,9 @@ namespace CPUFramework
                     prefix = "u_";
                     msgEnd = " must be unique.";
                 }
-                else if (msg.Contains("F_"))
+                else if (msg.Contains("f_"))
                 {
-                    prefix = "F_";
-                    msgEnd = "";
+                    prefix = "f_";
                 }
             }
             if (msg.Contains(prefix))
@@ -79,7 +78,6 @@ namespace CPUFramework
                 msg = msg.Replace("\"", "'");
                 int pos = msg.IndexOf(prefix) + prefix.Length;
                 msg = msg.Substring(pos);
-
                 pos = msg.IndexOf("'");
                 if (pos == -1)
                 {
