@@ -68,9 +68,9 @@ namespace CPUFramework
                     prefix = "u_";
                     msgEnd = " must be unique.";
                 }
-                else if (msg.Contains("f_"))
+                else if (msg.Contains("F_"))
                 {
-                    prefix = "f_";
+                    prefix = "F_";
                 }
             }
             if (msg.Contains(prefix))
