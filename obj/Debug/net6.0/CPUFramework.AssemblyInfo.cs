@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("CPUFramework")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7943ddcfcfda3bdd68d57efa42b2980ec5f842af")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+16c0d8b848c147bf555813513f50121404718b2b")]
 [assembly: System.Reflection.AssemblyProductAttribute("CPUFramework")]
 [assembly: System.Reflection.AssemblyTitleAttribute("CPUFramework")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
