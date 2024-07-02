@@ -1,6 +1,7 @@
 ﻿using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
+using System.Reflection.Metadata;
 using System.Text;
 
 namespace CPUFramework
@@ -82,7 +83,7 @@ namespace CPUFramework
                 throw new Exception(cmd.CommandText + ": " + ex.Message, ex);
             }
         }
-        private static string ParseConstraintMsg(string msg)
+        public static string ParseConstraintMsg(string msg)
         {
             string origmsg = msg;
             string prefix = "ck_";
@@ -126,6 +127,12 @@ namespace CPUFramework
                     }
                 }
             }
+
+            if (msg.Contains("547"))
+            {
+                msg = "Cannot delete recipe because it is part of a meal or cookbook.";
+            }
+
             return msg;
         }
 
@@ -205,5 +212,7 @@ namespace CPUFramework
                 }
             }
         }
+
+
     }
 }
