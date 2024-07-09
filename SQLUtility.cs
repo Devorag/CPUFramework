@@ -1,26 +1,55 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
-using System.Reflection.Metadata;
 using System.Text;
 
 namespace CPUFramework
 {
     public class SQLUtility
     {
-        public static string ConnectionString = "";
+        public static string ConnectionString = ""; // Ensure this is properly initialized
 
         public static SqlCommand GetSQLCommand(string sprocname)
         {
-            SqlCommand cmd;
+            SqlCommand cmd = new SqlCommand(sprocname);
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.Add(new SqlParameter("@RecipeId", SqlDbType.Int));
+            cmd.Parameters.Add(new SqlParameter("@Message", SqlDbType.VarChar, 500) { Direction = ParameterDirection.Output }); // Add @Message parameter with Output direction
+
             using (SqlConnection conn = new SqlConnection(SQLUtility.ConnectionString))
             {
-                cmd = new SqlCommand(sprocname, conn);
-                cmd.CommandType = CommandType.StoredProcedure;
                 conn.Open();
+                cmd.Connection = conn;
                 SqlCommandBuilder.DeriveParameters(cmd);
             }
             return cmd;
+        }
+
+
+
+        public static void SetParamValue(SqlCommand cmd, string paramName, object value)
+        {
+            try
+            {
+                if (cmd.Parameters.Contains(paramName))
+                {
+                    cmd.Parameters[paramName].Value = value ?? DBNull.Value;
+                }
+                else
+                {
+                    throw new ArgumentException($"Parameter '{paramName}' not found in SqlCommand.");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(cmd.CommandText + ": " + ex.Message, ex);
+            }
+        }
+
+        public static void ExecuteSQL(SqlCommand cmd)
+        {
+            DoExecuteSQL(cmd, false);
         }
 
         public static DataTable GetDataTable(SqlCommand cmd)
@@ -28,9 +57,21 @@ namespace CPUFramework
             return DoExecuteSQL(cmd, true);
         }
 
+        public static DataTable GetDataTable(string sqlstatement)
+        {
+            SqlCommand cmd = new SqlCommand(sqlstatement);
+            return GetDataTable(cmd);
+        }
+
+        public static void ExecuteSQL(string sqlstatement)
+        {
+            SqlCommand cmd = new SqlCommand(sqlstatement);
+            ExecuteSQL(cmd);
+        }
+
         private static DataTable DoExecuteSQL(SqlCommand cmd, bool loadTable)
         {
-            DataTable dt = new();
+            DataTable dt = new DataTable();
             using (SqlConnection conn = new SqlConnection(SQLUtility.ConnectionString))
             {
                 conn.Open();
@@ -38,10 +79,23 @@ namespace CPUFramework
                 Debug.Print(GetSQL(cmd));
                 try
                 {
-                    SqlDataReader dr = cmd.ExecuteReader();
-                    if (loadTable == true)
+                    if (cmd.CommandType == CommandType.StoredProcedure)
                     {
-                        dt.Load(dr);
+                        if (loadTable)
+                        {
+                            SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                            adapter.Fill(dt);
+                        }
+                        else
+                        {
+                            cmd.ExecuteNonQuery();
+                            CheckReturnValue(cmd);
+                        }
+                    }
+                    else
+                    {
+                        SqlDataAdapter adapter = new SqlDataAdapter(cmd);
+                        adapter.Fill(dt);
                     }
                 }
                 catch (SqlException ex)
@@ -58,31 +112,31 @@ namespace CPUFramework
             return dt;
         }
 
-        public static DataTable GetDataTable(string sqlstatement)  //- take a SQL statement and return a DataTable
+        private static void CheckReturnValue(SqlCommand cmd)
         {
-            return DoExecuteSQL(new SqlCommand(sqlstatement), true);
-        }
-
-        public static void ExecuteSQL(SqlCommand cmd)
-        {
-            DoExecuteSQL(cmd, false);
-        }
-
-        public static void ExecuteSQL(String sqlstatement)
-        {
-            GetDataTable(sqlstatement);
-        }
-
-        public static void SetParamValue(SqlCommand cmd, string paramName, object value)
-        {   try
+            int returnValue = 0;
+            string msg = "";
+            foreach (SqlParameter p in cmd.Parameters)
             {
-                cmd.Parameters[paramName].Value = value;
+                if (p.Direction == ParameterDirection.ReturnValue && p.Value != null)
+                {
+                    returnValue = (int)p.Value;
+                }
+                if (p.ParameterName.ToLower() == "@message" && p.Value != null)
+                {
+                    msg = p.Value.ToString();
+                }
             }
-            catch (Exception ex)
+            if (returnValue != 0)
             {
-                throw new Exception(cmd.CommandText + ": " + ex.Message, ex);
+                if (msg == "")
+                {
+                    msg = $"{cmd.CommandText} did not perform the requested action.";
+                }
+                throw new Exception(msg);
             }
         }
+
         public static string ParseConstraintMsg(string msg)
         {
             string origmsg = msg;
@@ -115,7 +169,7 @@ namespace CPUFramework
                 {
                     msg = msg.Substring(0, pos);
                     msg = msg.Replace("_", " ");
-                    msg = msg + msgEnd;   
+                    msg = msg + msgEnd;
 
                     if (prefix == "F_")
                     {
@@ -136,10 +190,10 @@ namespace CPUFramework
             return msg;
         }
 
+
         public static int GetFirstCFirstRValue(string sql)
         {
             int n = 0;
-
             DataTable dt = GetDataTable(sql);
             if (dt.Rows.Count > 0 && dt.Columns.Count > 0)
             {
@@ -153,7 +207,7 @@ namespace CPUFramework
 
         private static void SetAllColumnsAllowNull(DataTable dt)
         {
-            foreach(DataColumn c in dt.Columns)
+            foreach (DataColumn c in dt.Columns)
             {
                 c.AllowDBNull = true;
             }
@@ -163,9 +217,9 @@ namespace CPUFramework
         {
             string val = "";
 #if DEBUG
-            StringBuilder sb = new StringBuilder(); 
+            StringBuilder sb = new StringBuilder();
 
-            if(cmd.Connection != null)
+            if (cmd.Connection != null)
             {
                 sb.AppendLine($"--{cmd.Connection.DataSource}-");
                 sb.AppendLine($"use {cmd.Connection.Database}");
@@ -187,7 +241,6 @@ namespace CPUFramework
                             comma = "";
                         }
                         sb.AppendLine($"{p.ParameterName} = {(p.Value == null ? "null" : p.Value.ToString())} {comma} ");
-
                     }
                     paramnum++;
                 }
@@ -204,15 +257,13 @@ namespace CPUFramework
 
         public static void DebugPrintDataTable(DataTable dt)
         {
-            foreach(DataRow r in dt.Rows)
+            foreach (DataRow r in dt.Rows)
             {
-                foreach(DataColumn c in dt.Columns)
+                foreach (DataColumn c in dt.Columns)
                 {
                     Debug.Print(c.ColumnName + " = " + r[c.ColumnName].ToString());
                 }
             }
         }
-
-
     }
 }
