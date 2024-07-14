@@ -13,20 +13,15 @@ namespace CPUFramework
         public static SqlCommand GetSQLCommand(string sprocname)
         {
             SqlCommand cmd = new SqlCommand(sprocname);
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.Parameters.Add(new SqlParameter("@RecipeId", SqlDbType.Int));
-            cmd.Parameters.Add(new SqlParameter("@Message", SqlDbType.VarChar, 500) { Direction = ParameterDirection.Output }); // Add @Message parameter with Output direction
-
             using (SqlConnection conn = new SqlConnection(SQLUtility.ConnectionString))
             {
+                cmd.CommandType = CommandType.StoredProcedure;
                 conn.Open();
                 cmd.Connection = conn;
                 SqlCommandBuilder.DeriveParameters(cmd);
             }
             return cmd;
         }
-
-
 
         public static void SetParamValue(SqlCommand cmd, string paramName, object value)
         {
@@ -69,7 +64,17 @@ namespace CPUFramework
             ExecuteSQL(cmd);
         }
 
-        public static void SaveDataRow(DataRow row, string sprocname)
+        public static void SaveDataTable(DataTable dt, string sprocname)
+        {
+           var rows =  dt.Select("", "", DataViewRowState.Added | DataViewRowState.ModifiedCurrent); 
+            foreach(DataRow r in rows)
+            {
+                SaveDataRow(r, sprocname, false);
+            }
+            dt.AcceptChanges();
+        }
+
+        public static void SaveDataRow(DataRow row, string sprocname, bool acceptchanges = true)
         {
             SqlCommand cmd = GetSQLCommand(sprocname);
             foreach (DataColumn col in row.Table.Columns)
@@ -81,19 +86,23 @@ namespace CPUFramework
                 }
             }
 
-                DoExecuteSQL(cmd, false);
+            DoExecuteSQL(cmd, false);
 
-                foreach (SqlParameter p in cmd.Parameters)
+            foreach (SqlParameter p in cmd.Parameters)
+            {
+                if (p.Direction == ParameterDirection.InputOutput)
                 {
-                    if (p.Direction == ParameterDirection.InputOutput)
+                    string colName = p.ParameterName.Substring(1);
+                    if (row.Table.Columns.Contains(colName))
                     {
-                        string colName = p.ParameterName.Substring(1);
-                        if (row.Table.Columns.Contains(colName))
-                        {
-                            row[colName] = p.Value;
-                        }
+                        row[colName] = p.Value;
                     }
                 }
+            }
+            if (acceptchanges == true)
+            {
+                row.Table.AcceptChanges();
+            }
             
         }
 
@@ -113,6 +122,7 @@ namespace CPUFramework
                         {
                             SqlDataAdapter adapter = new SqlDataAdapter(cmd);
                             adapter.Fill(dt);
+                            CheckReturnValue(cmd);
                         }
                         else
                         {
@@ -136,7 +146,7 @@ namespace CPUFramework
                     throw new Exception(cmd.CommandText + ": " + ex.Message, ex);
                 }
             }
-            SetAllColumnsAllowNull(dt);
+            SetAllColumnProperties(dt);
             return dt;
         }
 
@@ -170,6 +180,7 @@ namespace CPUFramework
             string origmsg = msg;
             string prefix = "ck_";
             string msgEnd = "";
+            string notNullPrefix = "Cannot insert the value NULL into column";
 
             if (!msg.Contains(prefix))
             {
@@ -181,6 +192,11 @@ namespace CPUFramework
                 else if (msg.Contains("F_"))
                 {
                     prefix = "F_";
+                }
+                else if (msg.Contains(notNullPrefix))
+                {
+                    prefix = notNullPrefix;
+                    msgEnd = " cannot be blank";
                 }
             }
             if (msg.Contains(prefix))
@@ -233,14 +249,52 @@ namespace CPUFramework
             return n;
         }
 
-        private static void SetAllColumnsAllowNull(DataTable dt)
+        public static int GetValueFromFirstRowAsInt(DataTable dt, string columnName)
+        {
+            int value = 0;
+            if (dt.Rows.Count > 0)
+            {
+                DataRow r = dt.Rows[0];
+                if (r[columnName] != null && r[columnName] is int)
+                {
+                    value = (int)r[columnName];
+                }
+            }
+            return 0;
+        }
+
+        private static void SetAllColumnProperties(DataTable dt)
         {
             foreach (DataColumn c in dt.Columns)
             {
                 c.AllowDBNull = true;
+                c.AutoIncrement = false; 
             }
         }
 
+        public static string GetValueFromFirstRowAsString(DataTable dt, string columnName)
+        {
+            string value = "";
+            if (dt.Rows.Count > 0)
+            {
+                DataRow r = dt.Rows[0];
+                if (r[columnName] != null && r[columnName] is string)
+                {
+                    value = (string)r[columnName];
+                }
+            }
+            return value;
+        }
+
+        public static bool TableHasChanges(DataTable dt)
+        {
+            bool b = false;
+            if (dt.GetChanges() != null)
+            {
+                b = true;
+            }
+            return b;
+        }
         public static string GetSQL(SqlCommand cmd)
         {
             string val = "";
