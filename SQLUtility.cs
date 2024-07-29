@@ -1,14 +1,26 @@
-﻿using System;
-using System.Data;
+﻿using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace CPUFramework
 {
     public class SQLUtility
     {
         public static string ConnectionString = ""; // Ensure this is properly initialized
+
+        //public static void SetConnectionString(string connstring, bool tryopen)
+        //{
+        //    ConnectionString = connstring;
+        //    if(tryopen)
+        //    {
+        //        using(SqlConnection conn = new SqlConnection(ConnectionString))
+        //        {
+        //            conn.Open();
+        //        }
+        //    }
+        //}
 
         public static SqlCommand GetSQLCommand(string sprocname)
         {
@@ -195,8 +207,15 @@ namespace CPUFramework
                 }
                 else if (msg.Contains(notNullPrefix))
                 {
-                    prefix = notNullPrefix;
-                    msgEnd = " cannot be blank";
+                    string pattern = @"column '([^']*)'";
+                    Match match = Regex.Match(msg, pattern);
+
+                    if (match.Success)
+                    {
+                        prefix = notNullPrefix;
+                        string columnName = match.Groups[1].Value;        
+                        msgEnd = $"column {columnName} cannot be blank";
+                    }
                 }
             }
             if (msg.Contains(prefix))
@@ -260,7 +279,7 @@ namespace CPUFramework
                     value = (int)r[columnName];
                 }
             }
-            return 0;
+            return value;
         }
 
         private static void SetAllColumnProperties(DataTable dt)
@@ -295,6 +314,7 @@ namespace CPUFramework
             }
             return b;
         }
+
         public static string GetSQL(SqlCommand cmd)
         {
             string val = "";
@@ -303,6 +323,7 @@ namespace CPUFramework
 
             if (cmd.Connection != null)
             {
+                sb.AppendLine($"--{cmd.Connection.DataSource}-");
                 sb.AppendLine($"--{cmd.Connection.DataSource}-");
                 sb.AppendLine($"use {cmd.Connection.Database}");
                 sb.AppendLine("go");
