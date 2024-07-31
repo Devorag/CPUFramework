@@ -305,6 +305,7 @@ namespace CPUFramework
             return value;
         }
 
+
         public static bool TableHasChanges(DataTable dt)
         {
             bool b = false;
@@ -313,6 +314,10 @@ namespace CPUFramework
                 b = true;
             }
             return b;
+        }
+        public static bool IsInteger(string text)
+        {
+            return int.TryParse(text, out _);
         }
 
         public static string GetSQL(SqlCommand cmd)
