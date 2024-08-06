@@ -10,18 +10,25 @@ namespace CPUFramework
     {
         public static string ConnectionString = ""; // Ensure this is properly initialized
 
-        //public static void SetConnectionString(string connstring, bool tryopen)
-        //{
-        //    ConnectionString = connstring;
-        //    if(tryopen)
-        //    {
-        //        using(SqlConnection conn = new SqlConnection(ConnectionString))
-        //        {
-        //            conn.Open();
-        //        }
-        //    }
-        //}
-
+        public static void SetConnectionString(string connstring, bool tryopen, string userId = "", string password = "")
+        {
+            ConnectionString = connstring;
+            if (userId != "")
+            {
+                SqlConnectionStringBuilder b = new();
+                b.ConnectionString = ConnectionString;
+                b.UserID = userId;
+                b.Password = password;
+                ConnectionString = b.ConnectionString;
+            }
+            if (tryopen)
+            {
+                using (SqlConnection conn = new SqlConnection(ConnectionString))
+                {
+                    conn.Open();
+                }
+            }
+        }
         public static SqlCommand GetSQLCommand(string sprocname)
         {
             SqlCommand cmd = new SqlCommand(sprocname);
