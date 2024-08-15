@@ -20,7 +20,7 @@ namespace CPUFramework
             _updatesproc = tablename + "Update";
             _deletesproc = tablename + "Delete";
             _primarykeyname = tablename + "Id";
-            _primarykeyparamname = "@" + _primarykeyparamname;
+            _primarykeyparamname = "@" + _primarykeyname;
             _messageparam = "@" + "Message";
         }
         public DataTable Load(int primarykeyvalue)
@@ -33,16 +33,13 @@ namespace CPUFramework
             return dt;
         }
 
-        public string Delete(DataTable dataTable)
+        public void Delete(DataTable dataTable)
         {
             int id = (int)dataTable.Rows[0][_primarykeyname];
             SqlCommand cmd = SQLUtility.GetSQLCommand(_deletesproc);
             SQLUtility.SetParamValue(cmd, _primarykeyparamname, id);
-            SQLUtility.SetParamValue(cmd, _messageparam, DBNull.Value);
             SQLUtility.ExecuteSQL(cmd);
 
-            string message = Convert.ToString(cmd.Parameters[_messageparam].Value);
-            return message;
         }
 
         public void Save(DataTable dataTable)
