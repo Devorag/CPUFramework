@@ -13,7 +13,8 @@ namespace CPUFramework
         public static void SetConnectionString(string connstring, bool tryopen, string userId = "", string password = "")
         {
             ConnectionString = connstring;
-            if(userId != "") {
+            if (userId != "")
+            {
                 SqlConnectionStringBuilder b = new();
                 b.ConnectionString = ConnectionString;
                 b.UserID = userId;
@@ -44,17 +45,11 @@ namespace CPUFramework
 
         public static void SetParamValue(SqlCommand cmd, string paramName, object value)
         {
-            if (paramName.StartsWith("@") == false) { paramName = "@" + paramName; }
+            if (paramName.StartsWith("@") == false)
+            { paramName = "@" + paramName; }
             try
             {
-                if (cmd.Parameters.Contains(paramName))
-                {
-                    cmd.Parameters[paramName].Value = value ?? DBNull.Value;
-                }
-                else
-                {
-                    throw new ArgumentException($"Parameter '{paramName}' not found in SqlCommand.");
-                }
+                cmd.Parameters[paramName].Value = value;
             }
             catch (Exception ex)
             {
@@ -86,8 +81,8 @@ namespace CPUFramework
 
         public static void SaveDataTable(DataTable dt, string sprocname)
         {
-           var rows =  dt.Select("", "", DataViewRowState.Added | DataViewRowState.ModifiedCurrent); 
-            foreach(DataRow r in rows)
+            var rows = dt.Select("", "", DataViewRowState.Added | DataViewRowState.ModifiedCurrent);
+            foreach (DataRow r in rows)
             {
                 SaveDataRow(r, sprocname, false);
             }
@@ -123,7 +118,7 @@ namespace CPUFramework
             {
                 row.Table.AcceptChanges();
             }
-            
+
         }
 
         private static DataTable DoExecuteSQL(SqlCommand cmd, bool loadTable)
@@ -221,7 +216,7 @@ namespace CPUFramework
                     if (match.Success)
                     {
                         prefix = notNullPrefix;
-                        string columnName = match.Groups[1].Value;        
+                        string columnName = match.Groups[1].Value;
                         msgEnd = $"column {columnName} cannot be blank";
                     }
                 }
@@ -295,7 +290,7 @@ namespace CPUFramework
             foreach (DataColumn c in dt.Columns)
             {
                 c.AllowDBNull = true;
-                c.AutoIncrement = false; 
+                c.AutoIncrement = false;
             }
         }
 
