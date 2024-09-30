@@ -48,7 +48,7 @@ namespace CPUFramework
             List<T> lst = new();
             SqlCommand cmd = SQLUtility.GetSQLCommand(_getsproc);
             SQLUtility.SetParamValue(cmd, "@All", 1);
-            SQLUtility.SetParamValue(cmd, "@IncludeBlank", includeblank);
+            //SQLUtility.SetParamValue(cmd, "@IncludeBlank", includeblank);
             var dt = SQLUtility.GetDataTable(cmd);
             return GetListFromDataTable(dt);
         }
