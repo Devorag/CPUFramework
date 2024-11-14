@@ -32,16 +32,17 @@ namespace CPUFramework
 
         public static SqlCommand GetSQLCommand(string sprocname)
         {
-            SqlCommand cmd = new SqlCommand(sprocname);
-            using (SqlConnection conn = new SqlConnection(SQLUtility.ConnectionString))
+            SqlConnection conn = new SqlConnection(ConnectionString);
+            SqlCommand cmd = new SqlCommand(sprocname, conn)
             {
-                cmd.CommandType = CommandType.StoredProcedure;
-                conn.Open();
-                cmd.Connection = conn;
-                SqlCommandBuilder.DeriveParameters(cmd);
-            }
-            return cmd;
+                CommandType = CommandType.StoredProcedure
+            };
+
+            conn.Open();
+            SqlCommandBuilder.DeriveParameters(cmd);
+            return cmd; // Leave the connection open for further operations
         }
+
 
         public static void SetParamValue(SqlCommand cmd, string paramName, object value)
         {
@@ -59,7 +60,10 @@ namespace CPUFramework
 
         public static void ExecuteSQL(SqlCommand cmd)
         {
-            DoExecuteSQL(cmd, false);
+            using (cmd.Connection)
+            {
+                DoExecuteSQL(cmd, false);
+            }
         }
 
         public static DataTable GetDataTable(SqlCommand cmd)
@@ -169,6 +173,7 @@ namespace CPUFramework
         {
             int returnValue = 0;
             string msg = "";
+
             foreach (SqlParameter p in cmd.Parameters)
             {
                 if (p.Direction == ParameterDirection.ReturnValue && p.Value != null)
@@ -180,9 +185,10 @@ namespace CPUFramework
                     msg = p.Value.ToString();
                 }
             }
+
             if (returnValue != 0)
             {
-                if (msg == "")
+                if (string.IsNullOrEmpty(msg))
                 {
                     msg = $"{cmd.CommandText} did not perform the requested action.";
                 }
@@ -326,7 +332,7 @@ namespace CPUFramework
 
             if (cmd.Connection != null)
             {
-                //sb.AppendLine($"--{cmd.Connection.ConnectionString}-");
+                sb.AppendLine($"--{cmd.Connection.ConnectionString}-");
                 sb.AppendLine($"--{cmd.Connection.DataSource}-");
                 sb.AppendLine($"use {cmd.Connection.Database}");
                 sb.AppendLine("go");
@@ -373,5 +379,7 @@ namespace CPUFramework
                 }
             }
         }
+
+
     }
 }

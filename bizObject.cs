@@ -3,10 +3,11 @@ using System.Data;
 using System.Reflection;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Diagnostics;
 
 namespace CPUFramework
 {
-    public class bizObject <T> : INotifyPropertyChanged where T:bizObject<T>, new()
+    public class bizObject<T> : INotifyPropertyChanged where T : bizObject<T>, new()
     {
         string _typename = ""; string _tablename = ""; string _getsproc = ""; string _updatesproc = ""; string _deletesproc = "";
         string _primarykeyname = ""; string _primarykeyparamname = ""; string _messageparam = "";
@@ -75,13 +76,43 @@ namespace CPUFramework
 
         public void Delete(int id)
         {
+            this.ErrorMessage = "";
             SqlCommand cmd = SQLUtility.GetSQLCommand(_deletesproc);
             SQLUtility.SetParamValue(cmd, _primarykeyparamname, id);
             SQLUtility.ExecuteSQL(cmd);
         }
+        public void recipeDelete(int id)
+        {
+            this.ErrorMessage = "";
+
+
+            SqlCommand cmd = SQLUtility.GetSQLCommand(_deletesproc);
+
+ 
+            cmd.Parameters.Clear();
+
+            cmd.Parameters.AddWithValue("@RecipeId", id);
+
+            SqlParameter messageParam = new SqlParameter("@Message", SqlDbType.VarChar, 500);
+            messageParam.Direction = ParameterDirection.Output;
+            cmd.Parameters.Add(messageParam);
+
+            SQLUtility.ExecuteSQL(cmd);
+
+            this.ErrorMessage = cmd.Parameters["@Message"].Value?.ToString();
+
+            if (!string.IsNullOrEmpty(this.ErrorMessage) && !this.ErrorMessage.Equals("Recipe deleted successfully."))
+            {
+                throw new Exception(this.ErrorMessage);
+            }
+        }
+
+
+
 
         public void Delete()
         {
+            this.ErrorMessage = "";
             PropertyInfo? prop = GetProp(_primarykeyname, true, false);
             if (prop != null)
             {
@@ -101,6 +132,7 @@ namespace CPUFramework
 
         public void Save()
         {
+            this.ErrorMessage = "";
             SqlCommand cmd = SQLUtility.GetSQLCommand(_updatesproc);
             foreach (SqlParameter param in cmd.Parameters)
             {
@@ -108,7 +140,7 @@ namespace CPUFramework
                 if (prop != null)
                 {
                     object? val = prop.GetValue(this);
-                    if(val == null) { val = DBNull.Value; }
+                    if (val == null) { val = DBNull.Value; }
                     param.Value = val;
                 }
             }
@@ -124,6 +156,7 @@ namespace CPUFramework
 
         public void Save(DataTable dataTable)
         {
+            this.ErrorMessage = "";
             if (dataTable.Rows.Count == 0)
             {
                 throw new Exception($"Cannot call {_tablename} save method because there are no rows in the table");
@@ -135,7 +168,7 @@ namespace CPUFramework
         private PropertyInfo? GetProp(string propname, bool forread, bool forwrite)
         {
             propname = propname.ToLower();
-            if(propname.StartsWith("@")) { propname = propname.Substring(1); }
+            if (propname.StartsWith("@")) { propname = propname.Substring(1); }
             PropertyInfo? prop = _properties.FirstOrDefault(p =>
             p.Name.ToLower() == propname
             && (forread == false || p.CanRead == true)
@@ -147,14 +180,14 @@ namespace CPUFramework
         private void SetProp(string propname, object? value)
         {
             var prop = GetProp(propname, false, true);
-            if(prop != null)
+            if (prop != null)
             {
-                if(value == DBNull.Value) { value = null; }
+                if (value == DBNull.Value) { value = null; }
                 try
                 {
                     prop.SetValue(this, value);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     string msg = $"{_typename}.{prop.Name} is being set to {value?.ToString()} and that is the wrong data type. {ex.Message}";
                     throw new CPUDevException(msg, ex);
@@ -170,5 +203,7 @@ namespace CPUFramework
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyname));
         }
+
+        public string ErrorMessage { get; set; } = "";
     }
 }
