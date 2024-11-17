@@ -66,7 +66,7 @@ namespace CPUFramework
             return lst;
         }
 
-        private void LoadProps(DataRow dr)
+        protected void LoadProps(DataRow dr)
         {
             foreach (DataColumn col in dr.Table.Columns)
             {
