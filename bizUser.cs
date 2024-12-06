@@ -20,9 +20,20 @@ namespace CPUFramework
             }
         }
 
+        public void Logout()
+        {
+            SqlCommand cmd = SQLUtility.GetSQLCommand("UserLogout");
+            SQLUtility.SetParamValue(cmd, "username", UserName);
+            DataTable dt = SQLUtility.GetDataTable(cmd);
+            if (dt.Rows.Count > 0)
+            {
+                this.LoadProps(dt.Rows[0]);
+            }
+        }
+
         public void LoadBySessionKey()
         {
-            SqlCommand cmd = SQLUtility.GetSQLCommand("UserGet");
+            SqlCommand cmd = SQLUtility.GetSQLCommand("Users2Get");
             SQLUtility.SetParamValue(cmd, "sessionkey", SessionKey);
             DataTable dt = SQLUtility.GetDataTable(cmd);
             if (dt.Rows.Count > 0)
