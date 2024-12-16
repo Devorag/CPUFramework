@@ -32,15 +32,15 @@ namespace CPUFramework
 
         public static SqlCommand GetSQLCommand(string sprocname)
         {
-            SqlConnection conn = new SqlConnection(ConnectionString);
-            SqlCommand cmd = new SqlCommand(sprocname, conn)
+            SqlCommand cmd;
+            using (SqlConnection conn = new SqlConnection(SQLUtility.ConnectionString))
             {
-                CommandType = CommandType.StoredProcedure
-            };
-
-            conn.Open();
-            SqlCommandBuilder.DeriveParameters(cmd);
-            return cmd; // Leave the connection open for further operations
+                cmd = new SqlCommand(sprocname, conn);
+                cmd.CommandType = CommandType.StoredProcedure;
+                conn.Open();
+                SqlCommandBuilder.DeriveParameters(cmd);
+            }
+            return cmd;
         }
 
 
